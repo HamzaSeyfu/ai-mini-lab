@@ -55,81 +55,69 @@ $$
 
 be the size of tensor $X$ along dimension $k$.
 
-The size of the reduced dimension is therefore:
+The size of the reduced dimension is:
 
 $$
-dX_{\text{axis}}
+dX_{\mathrm{axis}}
 $$
 
-For every fixed output position, all indices of $X$ are fixed except the index along the `axis` dimension. This varying index is denoted by $j$, with:
+For every output position $k$, all indices of $X$ are fixed except the index along the `axis` dimension.
+
+This varying index is denoted by $j$.
+
+It satisfies:
 
 $$
-0 \leq j < dX_{\text{axis}}
+0 \leq j < dX_{\mathrm{axis}}
 $$
 
-For fixed indices outside the reduced dimension, the maximum value is defined as:
+For a fixed output position $k$, let:
 
 $$
-M =
-\max_{0 \leq j < dX_{\text{axis}}}
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+S_k(j)
 $$
 
-The output value is the index $j$ where this maximum value is reached.
+denote the value of $X$ at the same fixed coordinates as $k$, with the coordinate $j$ inserted along the `axis` dimension.
 
-If `select_last_index = 0`, the first occurrence of the maximum value is selected:
+In other words, $S_k(j)$ represents the slice of $X$ being inspected by **ArgMax** for one output position.
 
-$$
-Y[k] =
-\min
-\left{
-j
-;\middle|;
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
-==================================================================
-
-M
-\right}
-$$
-
-If `select_last_index = 1`, the last occurrence of the maximum value is selected:
+The maximum value of this slice is:
 
 $$
-Y[k] =
-\max
-\left{
-j
-;\middle|;
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
-==================================================================
-
-M
-\right}
+M_k =
+\max_{0 \leq j < dX_{\mathrm{axis}}}
+S_k(j)
 $$
 
-where $k$ is the output tensor index corresponding to the fixed indices outside the reduced axis.
+The output value $Y[k]$ is an index $j$ where this maximum value is reached.
+
+If `select_last_index = 0`, the first occurrence of the maximum value is selected.
+
+In other words, $Y[k]$ is the smallest index $j$ such that:
+
+$$
+S_k(j) = M_k
+$$
+
+If `select_last_index = 1`, the last occurrence of the maximum value is selected.
+
+In other words, $Y[k]$ is the greatest index $j$ such that:
+
+$$
+S_k(j) = M_k
+$$
 
 The output tensor contains integer indices in the range:
 
 $$
-0 \leq Y[k] < dX_{\text{axis}}
+0 \leq Y[k] < dX_{\mathrm{axis}}
 $$
 
 The shape of the output tensor depends on the value of `keepdims`.
 
-If `keepdims = 1`, the output tensor keeps the same rank as $X$, and the reduced dimension is replaced by $1$:
+If `keepdims = 1`, the output tensor keeps the same rank as $X$, and the reduced dimension is replaced by $1$.
 
-$$
-shape(Y) =
-(dX_0,\ldots,dX_{\text{axis}-1},1,dX_{\text{axis}+1},\ldots,dX_{r-1})
-$$
-
-If `keepdims = 0`, the reduced dimension is removed:
-
-$$
-shape(Y) =
-(dX_0,\ldots,dX_{\text{axis}-1},dX_{\text{axis}+1},\ldots,dX_{r-1})
-$$
+If `keepdims = 0`, the reduced dimension is removed from the output tensor.
 
 ---
 
@@ -158,7 +146,9 @@ $$
 select_last_index = 0
 $$
 
-The maximum value is $5$, located at index $1$.
+The maximum value is $5$.
+
+It is located at index $1$.
 
 Therefore:
 
@@ -169,7 +159,9 @@ Y =
 \end{bmatrix}
 $$
 
-The shape of $X$ is $(4)$ and the shape of $Y$ is $(1)$.
+The shape of $X$ is $(4)$.
+
+The shape of $Y$ is $(1)$.
 
 ---
 
@@ -201,29 +193,29 @@ $$
 
 The maximum is computed column by column.
 
-Column 0:
+For column $0$:
 
 $$
 \max(1,4)=4
 $$
 
-so the selected index is $1$.
+The selected index is $1$.
 
-Column 1:
+For column $1$:
 
 $$
 \max(9,2)=9
 $$
 
-so the selected index is $0$.
+The selected index is $0$.
 
-Column 2:
+For column $2$:
 
 $$
 \max(3,6)=6
 $$
 
-so the selected index is $1$.
+The selected index is $1$.
 
 Therefore:
 
@@ -234,7 +226,9 @@ Y =
 \end{bmatrix}
 $$
 
-The shape of $X$ is $(2,3)$ and the shape of $Y$ is $(1,3)$.
+The shape of $X$ is $(2,3)$.
+
+The shape of $Y$ is $(1,3)$.
 
 ---
 
@@ -266,21 +260,21 @@ $$
 
 The maximum is computed row by row.
 
-Row 0:
+For row $0$:
 
 $$
 \max(1,9,3)=9
 $$
 
-so the selected index is $1$.
+The selected index is $1$.
 
-Row 1:
+For row $1$:
 
 $$
 \max(4,2,6)=6
 $$
 
-so the selected index is $2$.
+The selected index is $2$.
 
 Therefore:
 
@@ -292,7 +286,9 @@ Y =
 \end{bmatrix}
 $$
 
-The shape of $X$ is $(2,3)$ and the shape of $Y$ is $(2,1)$.
+The shape of $X$ is $(2,3)$.
+
+The shape of $Y$ is $(2,1)$.
 
 ---
 
@@ -322,7 +318,9 @@ $$
 select_last_index = 0
 $$
 
-The maximum is computed row by row, and the reduced dimension is removed.
+The maximum is computed row by row.
+
+The reduced dimension is removed.
 
 Therefore:
 
@@ -333,7 +331,9 @@ Y =
 \end{bmatrix}
 $$
 
-The shape of $X$ is $(2,3)$ and the shape of $Y$ is $(2)$.
+The shape of $X$ is $(2,3)$.
+
+The shape of $Y$ is $(2)$.
 
 ---
 
@@ -462,7 +462,7 @@ $$
 
 The maximum is computed along the last dimension.
 
-For the first matrix:
+For the first inner matrix:
 
 $$
 \begin{bmatrix}
@@ -480,7 +480,7 @@ $$
 \end{bmatrix}
 $$
 
-For the second matrix:
+For the second inner matrix:
 
 $$
 \begin{bmatrix}
@@ -529,7 +529,7 @@ The operator is undefined if one of the following conditions holds:
 
 * `axis < 0`
 * `axis >= r`, where $r$ is the rank of $X$
-* $dX_{\text{axis}} = 0$
+* $dX_{\mathrm{axis}} = 0$
 * `keepdims` is not equal to `0` or `1`
 * `select_last_index` is not equal to `0` or `1`
 
@@ -607,26 +607,16 @@ Output tensor containing the indices of the maximum values of $X$ along `axis`.
 
 * `[C2]` <a id="C2ry"></a> Output shape consistency
 
-  * Statement: If `keepdims = 1`, then:
+  * Statement: If `keepdims = 1`, the shape of $Y$ shall be equal to the shape of $X$, except that the dimension `axis` shall be replaced by $1$.
 
-$$
-shape(Y) =
-(dX_0,\ldots,dX_{\text{axis}-1},1,dX_{\text{axis}+1},\ldots,dX_{r-1})
-$$
-
-* Statement: If `keepdims = 0`, then:
-
-$$
-shape(Y) =
-(dX_0,\ldots,dX_{\text{axis}-1},dX_{\text{axis}+1},\ldots,dX_{r-1})
-$$
+  * Statement: If `keepdims = 0`, the shape of $Y$ shall be equal to the shape of $X$ with the dimension `axis` removed.
 
 * `[C3]` <a id="C3ry"></a> Output value range
 
   * Statement: For every output index $k$:
 
 $$
-0 \leq Y[k] < dX_{\text{axis}}
+0 \leq Y[k] < dX_{\mathrm{axis}}
 $$
 
 <a id="float"></a>
@@ -660,11 +650,23 @@ The output tensor contains integer indices and not floating-point values.
 
 For finite values, the behavior is the same as for real numbers.
 
-For every fixed output position, all indices of $X$ are fixed except the index along the `axis` dimension. This varying index is denoted by $j$, with:
+For every output position $k$, all indices of $X$ are fixed except the index along the `axis` dimension.
+
+This varying index is denoted by $j$.
+
+It satisfies:
 
 $$
-0 \leq j < dX_{\text{axis}}
+0 \leq j < dX_{\mathrm{axis}}
 $$
+
+For a fixed output position $k$, let:
+
+$$
+S_k(j)
+$$
+
+denote the value of $X$ at the same fixed coordinates as $k$, with the coordinate $j$ inserted along the `axis` dimension.
 
 If the reduced slice contains no `NaN`, then:
 
@@ -680,94 +682,48 @@ If the reduced slice contains one or more `NaN` values, the result is defined de
 
 This convention gives priority to `NaN` values over finite and infinite values in the reduced slice.
 
-Let $S$ be the reduced slice associated with a fixed output position:
+If the reduced slice contains at least one `NaN`, then `NaN` values have priority over all other values.
+
+If `select_last_index = 0`, the selected output value is the first index of a `NaN` value along the reduced axis.
+
+In other words, $Y[k]$ is the smallest index $j$ such that:
 
 $$
-S =
-\left{
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
-\mid
-0 \leq j < dX_{\text{axis}}
-\right}
+S_k(j) = \text{NaN}
 $$
 
-If there exists at least one index $j$ such that:
+If `select_last_index = 1`, the selected output value is the last index of a `NaN` value along the reduced axis.
+
+In other words, $Y[k]$ is the greatest index $j$ such that:
 
 $$
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
-==================================================================
-
-\text{NaN}
+S_k(j) = \text{NaN}
 $$
 
-then:
+If the reduced slice contains no `NaN`, then the maximum value is computed normally.
+
+Let:
 
 $$
-Y[k] =
-\begin{cases}
-\min
-\left{
-j
-;\middle|;
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
-==================================================================
-
-\text{NaN}
-\right}
-&
-\text{if } select_last_index = 0
-\
-\max
-\left{
-j
-;\middle|;
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
-==================================================================
-
-\text{NaN}
-\right}
-&
-\text{if } select_last_index = 1
-\end{cases}
+M_k =
+\max_{0 \leq j < dX_{\mathrm{axis}}}
+S_k(j)
 $$
 
-Otherwise, let:
+If `select_last_index = 0`, the selected output value is the first index where the maximum value is reached.
+
+In other words, $Y[k]$ is the smallest index $j$ such that:
 
 $$
-M =
-\max_{0 \leq j < dX_{\text{axis}}}
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+S_k(j) = M_k
 $$
 
-Then:
+If `select_last_index = 1`, the selected output value is the last index where the maximum value is reached.
+
+In other words, $Y[k]$ is the greatest index $j$ such that:
 
 $$
-Y[k] =
-\begin{cases}
-\min
-\left{
-j
-;\middle|;
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
-==================================================================
-
-M
-\right}
-&
-\text{if } select_last_index = 0
-\
-\max
-\left{
-j
-;\middle|;
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
-==================================================================
-
-M
-\right}
-&
-\text{if } select_last_index = 1
-\end{cases}
+S_k(j) = M_k
 $$
 
 The output shape is defined in the same way as in [ArgMax (real)](#real).
@@ -884,7 +840,9 @@ $$
 
 For the first row, $-2.0$ is the maximum value, located at index $2$.
 
-For the second row, all values are equal to $-\inf$. Since `select_last_index = 0`, the first occurrence is selected.
+For the second row, all values are equal to $-\inf$.
+
+Since `select_last_index = 0`, the first occurrence is selected.
 
 Therefore:
 
@@ -1047,7 +1005,7 @@ The operator is undefined if one of the following conditions holds:
 
 * `axis < 0`
 * `axis >= r`, where $r$ is the rank of $X$
-* $dX_{\text{axis}} = 0$
+* $dX_{\mathrm{axis}} = 0$
 * `keepdims` is not equal to `0` or `1`
 * `select_last_index` is not equal to `0` or `1`
 
@@ -1136,48 +1094,46 @@ See [Restrictions](#real).
 
 The **ArgMax** operator computes the index of the maximum integer value of the input tensor $X$ along a specified axis.
 
-For every fixed output position, all indices of $X$ are fixed except the index along the `axis` dimension. This varying index is denoted by $j$, with:
+For every output position $k$, all indices of $X$ are fixed except the index along the `axis` dimension.
+
+This varying index is denoted by $j$.
+
+It satisfies:
 
 $$
-0 \leq j < dX_{\text{axis}}
+0 \leq j < dX_{\mathrm{axis}}
 $$
 
-For fixed indices outside the reduced dimension, the maximum value is defined as:
+For a fixed output position $k$, let:
 
 $$
-M =
-\max_{0 \leq j < dX_{\text{axis}}}
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+S_k(j)
 $$
 
-If `select_last_index = 0`, the first occurrence of the maximum value is selected:
+denote the value of $X$ at the same fixed coordinates as $k$, with the coordinate $j$ inserted along the `axis` dimension.
+
+The maximum value of this slice is:
 
 $$
-Y[k] =
-\min
-\left{
-j
-;\middle|;
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
-==================================================================
-
-M
-\right}
+M_k =
+\max_{0 \leq j < dX_{\mathrm{axis}}}
+S_k(j)
 $$
 
-If `select_last_index = 1`, the last occurrence of the maximum value is selected:
+If `select_last_index = 0`, the first occurrence of the maximum value is selected.
+
+In other words, $Y[k]$ is the smallest index $j$ such that:
 
 $$
-Y[k] =
-\max
-\left{
-j
-;\middle|;
-X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
-==================================================================
+S_k(j) = M_k
+$$
 
-M
-\right}
+If `select_last_index = 1`, the last occurrence of the maximum value is selected.
+
+In other words, $Y[k]$ is the greatest index $j$ such that:
+
+$$
+S_k(j) = M_k
 $$
 
 The output tensor contains integer indices of type `int64`.
@@ -1291,7 +1247,7 @@ The operator is undefined if one of the following conditions holds:
 
 * `axis < 0`
 * `axis >= r`, where $r$ is the rank of $X$
-* $dX_{\text{axis}} = 0$
+* $dX_{\mathrm{axis}} = 0$
 * `keepdims` is not equal to `0` or `1`
 * `select_last_index` is not equal to `0` or `1`
 
