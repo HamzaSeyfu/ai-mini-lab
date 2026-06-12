@@ -39,36 +39,43 @@ The **ArgMax** operator computes the index of the maximum value of the input ten
 
 Let:
 
-* $r$ be the rank of $X$,
-* $\textit{axis}$ be the attribute specifying the dimension along which the maximum is searched,
-* $dX_k$ be the size of $X$ along dimension $k$,
-* $dX_{axis}$ be the size of $X$ along the reduced dimension,
-* $\textit{keepdims}$ specify whether the reduced dimension is kept in the output shape,
-* $\textit{select_last_index}$ specify whether the first or last index is selected when the maximum value appears more than once.
-
-For any fixed indices outside the `axis` dimension, the operator searches the maximum value among all elements:
-
 $$
-X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}]
+r = \operatorname{rank}(X)
 $$
 
-where:
+where $r$ is the rank of the input tensor $X$.
 
-$$
-0 \le j < dX_{axis}
-$$
+Let `axis` be the dimension along which the maximum value is searched.
 
 Let:
 
 $$
-M(i_0,\dots,i_{axis-1},i_{axis+1},\dots,i_{r-1})
-================================================
-
-\max_{0 \le j < dX_{axis}}
-X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}]
+dX_k
 $$
 
-The output value is the index $j$ where this maximum is reached.
+be the size of tensor $X$ along dimension $k$.
+
+The size of the reduced dimension is therefore:
+
+$$
+dX_{\text{axis}}
+$$
+
+For every fixed output position, all indices of $X$ are fixed except the index along the `axis` dimension. This varying index is denoted by $j$, with:
+
+$$
+0 \leq j < dX_{\text{axis}}
+$$
+
+For fixed indices outside the reduced dimension, the maximum value is defined as:
+
+$$
+M =
+\max_{0 \leq j < dX_{\text{axis}}}
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+$$
+
+The output value is the index $j$ where this maximum value is reached.
 
 If `select_last_index = 0`, the first occurrence of the maximum value is selected:
 
@@ -76,11 +83,12 @@ $$
 Y[k] =
 \min
 \left{
-j \mid
-X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}]
-==================================================
+j
+;\middle|;
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+==================================================================
 
-M(i_0,\dots,i_{axis-1},i_{axis+1},\dots,i_{r-1})
+M
 \right}
 $$
 
@@ -90,15 +98,22 @@ $$
 Y[k] =
 \max
 \left{
-j \mid
-X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}]
-==================================================
+j
+;\middle|;
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+==================================================================
 
-M(i_0,\dots,i_{axis-1},i_{axis+1},\dots,i_{r-1})
+M
 \right}
 $$
 
 where $k$ is the output tensor index corresponding to the fixed indices outside the reduced axis.
+
+The output tensor contains integer indices in the range:
+
+$$
+0 \leq Y[k] < dX_{\text{axis}}
+$$
 
 The shape of the output tensor depends on the value of `keepdims`.
 
@@ -106,134 +121,217 @@ If `keepdims = 1`, the output tensor keeps the same rank as $X$, and the reduced
 
 $$
 shape(Y) =
-(dX_0,\dots,dX_{axis-1},1,dX_{axis+1},\dots,dX_{r-1})
+(dX_0,\ldots,dX_{\text{axis}-1},1,dX_{\text{axis}+1},\ldots,dX_{r-1})
 $$
 
 If `keepdims = 0`, the reduced dimension is removed:
 
 $$
 shape(Y) =
-(dX_0,\dots,dX_{axis-1},dX_{axis+1},\dots,dX_{r-1})
-$$
-
-The output tensor contains integer indices in the range:
-
-$$
-0 \le Y[k] < dX_{axis}
+(dX_0,\ldots,dX_{\text{axis}-1},dX_{\text{axis}+1},\ldots,dX_{r-1})
 $$
 
 ---
 
 ### Example 1: 1D tensor
 
-```math
-X = \begin{bmatrix} 1 & 5 & 3 & 2 \end{bmatrix}
-```
+Let:
+
+$$
+X =
+\begin{bmatrix}
+1 & 5 & 3 & 2
+\end{bmatrix}
+$$
 
 with:
 
-```math
-axis = 0,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 0
+$$
+
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
 
 The maximum value is $5$, located at index $1$.
 
-```math
-Y = \begin{bmatrix} 1 \end{bmatrix}
-```
+Therefore:
+
+$$
+Y =
+\begin{bmatrix}
+1
+\end{bmatrix}
+$$
+
+The shape of $X$ is $(4)$ and the shape of $Y$ is $(1)$.
 
 ---
 
 ### Example 2: 2D tensor with `axis = 0`
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
-1 & 9 & 3 \\
+1 & 9 & 3 \
 4 & 2 & 6
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 0,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 0
+$$
+
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
 
 The maximum is computed column by column.
 
-```math
+Column 0:
+
+$$
+\max(1,4)=4
+$$
+
+so the selected index is $1$.
+
+Column 1:
+
+$$
+\max(9,2)=9
+$$
+
+so the selected index is $0$.
+
+Column 2:
+
+$$
+\max(3,6)=6
+$$
+
+so the selected index is $1$.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
 1 & 0 & 1
 \end{bmatrix}
-```
+$$
 
-Explanation:
-
-* column 0: $\max(1,4)=4$, index $1$
-* column 1: $\max(9,2)=9$, index $0$
-* column 2: $\max(3,6)=6$, index $1$
+The shape of $X$ is $(2,3)$ and the shape of $Y$ is $(1,3)$.
 
 ---
 
 ### Example 3: 2D tensor with `axis = 1`
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
-1 & 9 & 3 \\
+1 & 9 & 3 \
 4 & 2 & 6
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 1
+$$
+
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
 
 The maximum is computed row by row.
 
-```math
+Row 0:
+
+$$
+\max(1,9,3)=9
+$$
+
+so the selected index is $1$.
+
+Row 1:
+
+$$
+\max(4,2,6)=6
+$$
+
+so the selected index is $2$.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
-1 \\
+1 \
 2
 \end{bmatrix}
-```
+$$
 
-Explanation:
-
-* row 0: $\max(1,9,3)=9$, index $1$
-* row 1: $\max(4,2,6)=6$, index $2$
+The shape of $X$ is $(2,3)$ and the shape of $Y$ is $(2,1)$.
 
 ---
 
 ### Example 4: `keepdims = 0`
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
-1 & 9 & 3 \\
+1 & 9 & 3 \
 4 & 2 & 6
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 0,\quad select\_last\_index = 0
-```
+$$
+axis = 1
+$$
+
+$$
+keepdims = 0
+$$
+
+$$
+select_last_index = 0
+$$
 
 The maximum is computed row by row, and the reduced dimension is removed.
 
-```math
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
 1 & 2
 \end{bmatrix}
-```
+$$
 
 The shape of $X$ is $(2,3)$ and the shape of $Y$ is $(2)$.
 
@@ -241,111 +339,187 @@ The shape of $X$ is $(2,3)$ and the shape of $Y$ is $(2)$.
 
 ### Example 5: repeated maximum with first index selected
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
 1 & 5 & 5 & 2
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 1
+$$
 
-The maximum value is $5$, appearing at indices $1$ and $2$ along `axis`.
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
+
+The maximum value is $5$.
+
+It appears at indices $1$ and $2$ along the reduced axis.
 
 Since `select_last_index = 0`, the first occurrence is selected.
 
-```math
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
 1
 \end{bmatrix}
-```
+$$
 
 ---
 
 ### Example 6: repeated maximum with last index selected
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
 1 & 5 & 5 & 2
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 1
-```
+$$
+axis = 1
+$$
 
-The maximum value is $5$, appearing at indices $1$ and $2$ along `axis`.
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 1
+$$
+
+The maximum value is $5$.
+
+It appears at indices $1$ and $2$ along the reduced axis.
 
 Since `select_last_index = 1`, the last occurrence is selected.
 
-```math
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
 2
 \end{bmatrix}
-```
+$$
 
 ---
 
 ### Example 7: 3D tensor
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
 \begin{bmatrix}
-1 & 3 & 2 \\
+1 & 3 & 2 \
 4 & 0 & 6
 \end{bmatrix}
-\\
+\
 \begin{bmatrix}
-7 & 5 & 9 \\
+7 & 5 & 9 \
 2 & 8 & 1
 \end{bmatrix}
 \end{bmatrix}
-```
+$$
 
-Shape:
+The shape of $X$ is:
 
-```math
+$$
 shape(X) = (2,2,3)
-```
+$$
 
 with:
 
-```math
-axis = 2,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 2
+$$
+
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
 
 The maximum is computed along the last dimension.
 
-```math
+For the first matrix:
+
+$$
+\begin{bmatrix}
+1 & 3 & 2 \
+4 & 0 & 6
+\end{bmatrix}
+$$
+
+the selected indices are:
+
+$$
+\begin{bmatrix}
+1 \
+2
+\end{bmatrix}
+$$
+
+For the second matrix:
+
+$$
+\begin{bmatrix}
+7 & 5 & 9 \
+2 & 8 & 1
+\end{bmatrix}
+$$
+
+the selected indices are:
+
+$$
+\begin{bmatrix}
+2 \
+1
+\end{bmatrix}
+$$
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
 \begin{bmatrix}
-1 \\
+1 \
 2
 \end{bmatrix}
-\\
+\
 \begin{bmatrix}
-2 \\
+2 \
 1
 \end{bmatrix}
 \end{bmatrix}
-```
+$$
 
-Shape:
+The shape of $Y$ is:
 
-```math
+$$
 shape(Y) = (2,2,1)
-```
+$$
 
 ---
 
@@ -355,7 +529,7 @@ The operator is undefined if one of the following conditions holds:
 
 * `axis < 0`
 * `axis >= r`, where $r$ is the rank of $X$
-* $dX_{axis} = 0$
+* $dX_{\text{axis}} = 0$
 * `keepdims` is not equal to `0` or `1`
 * `select_last_index` is not equal to `0` or `1`
 
@@ -435,25 +609,25 @@ Output tensor containing the indices of the maximum values of $X$ along `axis`.
 
   * Statement: If `keepdims = 1`, then:
 
-```math
+$$
 shape(Y) =
-(dX_0,\dots,dX_{axis-1},1,dX_{axis+1},\dots,dX_{r-1})
-```
+(dX_0,\ldots,dX_{\text{axis}-1},1,dX_{\text{axis}+1},\ldots,dX_{r-1})
+$$
 
 * Statement: If `keepdims = 0`, then:
 
-```math
+$$
 shape(Y) =
-(dX_0,\dots,dX_{axis-1},dX_{axis+1},\dots,dX_{r-1})
-```
+(dX_0,\ldots,dX_{\text{axis}-1},dX_{\text{axis}+1},\ldots,dX_{r-1})
+$$
 
 * `[C3]` <a id="C3ry"></a> Output value range
 
   * Statement: For every output index $k$:
 
-```math
-0 \le Y[k] < dX_{axis}
-```
+$$
+0 \leq Y[k] < dX_{\text{axis}}
+$$
 
 <a id="float"></a>
 
@@ -482,280 +656,388 @@ See [Restrictions](#real).
 
 The **ArgMax** operator computes the index of the maximum floating-point value of the input tensor $X$ along a specified axis according to IEEE 754 floating-point semantics.
 
+The output tensor contains integer indices and not floating-point values.
+
 For finite values, the behavior is the same as for real numbers.
 
-For any fixed indices outside the `axis` dimension, the operator searches the index of the maximum value among:
+For every fixed output position, all indices of $X$ are fixed except the index along the `axis` dimension. This varying index is denoted by $j$, with:
 
-```math
-X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}]
-```
-
-where:
-
-```math
-0 \le j < dX_{axis}
-```
+$$
+0 \leq j < dX_{\text{axis}}
+$$
 
 If the reduced slice contains no `NaN`, then:
 
-* `+inf` is considered greater than all finite values,
-* finite values are ordered according to the usual floating-point order,
-* `-inf` is considered smaller than all finite values,
-* if the maximum appears several times, the selected index depends on `select_last_index`.
+* `+inf` is greater than all finite values.
+* Finite values are ordered according to the usual floating-point order.
+* `-inf` is smaller than all finite values.
+* If the maximum appears several times, the selected index depends on `select_last_index`.
 
-If the reduced slice contains one or more `NaN` values, the result is defined as follows in order to keep the operator deterministic:
+If the reduced slice contains one or more `NaN` values, the result is defined deterministically as follows:
 
-* if `select_last_index = 0`, the index of the first `NaN` along the reduced axis is returned,
+* if `select_last_index = 0`, the index of the first `NaN` along the reduced axis is returned;
 * if `select_last_index = 1`, the index of the last `NaN` along the reduced axis is returned.
 
 This convention gives priority to `NaN` values over finite and infinite values in the reduced slice.
 
-More formally, for any reduced slice:
+Let $S$ be the reduced slice associated with a fixed output position:
 
-```math
+$$
 S =
-\left\{
-X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}]
+\left{
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
 \mid
-0 \le j < dX_{axis}
-\right\}
-```
+0 \leq j < dX_{\text{axis}}
+\right}
+$$
 
 If there exists at least one index $j$ such that:
 
-```math
-X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}] = \text{NaN}
-```
+$$
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+==================================================================
+
+\text{NaN}
+$$
 
 then:
 
-```math
-Y[k] =
-\begin{cases}
-\min \left\{ j \mid X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}] = \text{NaN} \right\}
-& \text{if } select\_last\_index = 0 \\
-
-\max \left\{ j \mid X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}] = \text{NaN} \right\}
-& \text{if } select\_last\_index = 1
-\end{cases}
-```
-
-Otherwise, let:
-
-```math
-M =
-\max_{0 \le j < dX_{axis}}
-X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}]
-```
-
-Then:
-
-```math
+$$
 Y[k] =
 \begin{cases}
 \min
-\left\{
-j \mid
-X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}]
-=
-M
-\right\}
-& \text{if } select\_last\_index = 0 \\
+\left{
+j
+;\middle|;
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+==================================================================
 
+\text{NaN}
+\right}
+&
+\text{if } select_last_index = 0
+\
 \max
-\left\{
-j \mid
-X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}]
-=
-M
-\right\}
-& \text{if } select\_last\_index = 1
+\left{
+j
+;\middle|;
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+==================================================================
+
+\text{NaN}
+\right}
+&
+\text{if } select_last_index = 1
 \end{cases}
-```
+$$
+
+Otherwise, let:
+
+$$
+M =
+\max_{0 \leq j < dX_{\text{axis}}}
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+$$
+
+Then:
+
+$$
+Y[k] =
+\begin{cases}
+\min
+\left{
+j
+;\middle|;
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+==================================================================
+
+M
+\right}
+&
+\text{if } select_last_index = 0
+\
+\max
+\left{
+j
+;\middle|;
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+==================================================================
+
+M
+\right}
+&
+\text{if } select_last_index = 1
+\end{cases}
+$$
+
+The output shape is defined in the same way as in [ArgMax (real)](#real).
 
 ---
 
 ### Example 1: finite floating-point values
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
-1.0 & 9.5 & 3.0 \\
+1.0 & 9.5 & 3.0 \
 4.0 & 2.0 & 6.5
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 1
+$$
 
-```math
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
+
+The maximum is computed row by row.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
-1 \\
+1 \
 2
 \end{bmatrix}
-```
+$$
 
 ---
 
 ### Example 2: `+inf`
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
-1.0 & +\inf & 3.0 \\
+1.0 & +\inf & 3.0 \
 4.0 & 2.0 & 6.5
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 1
+$$
 
-```math
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
+
+For the first row, `+inf` is the maximum value, located at index $1$.
+
+For the second row, $6.5$ is the maximum value, located at index $2$.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
-1 \\
+1 \
 2
 \end{bmatrix}
-```
-
-Explanation:
-
-* row 0: `+inf` is the maximum, index $1$
-* row 1: $6.5$ is the maximum, index $2$
+$$
 
 ---
 
 ### Example 3: `-inf`
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
--\inf & -4.0 & -2.0 \\
+-\inf & -4.0 & -2.0 \
 -\inf & -\inf & -\inf
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 1
+$$
 
-```math
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
+
+For the first row, $-2.0$ is the maximum value, located at index $2$.
+
+For the second row, all values are equal to $-\inf$. Since `select_last_index = 0`, the first occurrence is selected.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
-2 \\
+2 \
 0
 \end{bmatrix}
-```
-
-Explanation:
-
-* row 0: $-2.0$ is the maximum, index $2$
-* row 1: all values are equal to $-\inf$, so the first index is selected
+$$
 
 ---
 
 ### Example 4: `NaN` with first index selected
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
-1.0 & \text{NaN} & 3.0 \\
+1.0 & \text{NaN} & 3.0 \
 4.0 & 2.0 & 6.5
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 1
+$$
 
-```math
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
+
+The first row contains `NaN` at index $1$.
+
+Since `select_last_index = 0`, the first `NaN` index is selected.
+
+The second row contains no `NaN`, so the maximum value $6.5$ is selected.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
-1 \\
+1 \
 2
 \end{bmatrix}
-```
-
-Explanation:
-
-* row 0 contains `NaN`, so the first `NaN` index is selected
-* row 1 contains no `NaN`, so the maximum finite value is selected
+$$
 
 ---
 
 ### Example 5: `NaN` with last index selected
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
 \text{NaN} & 1.0 & \text{NaN} & 3.0
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 1
-```
+$$
+axis = 1
+$$
 
-```math
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 1
+$$
+
+The row contains two `NaN` values at indices $0$ and $2$.
+
+Since `select_last_index = 1`, the last `NaN` index is selected.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
 2
 \end{bmatrix}
-```
-
-Explanation:
-
-The row contains two `NaN` values at indices $0$ and $2$. Since `select_last_index = 1`, the last `NaN` index is selected.
+$$
 
 ---
 
 ### Example 6: repeated maximum with floating-point values
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
 1.0 & 7.0 & 7.0 & 2.0
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 1
+$$
 
-```math
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
+
+The maximum value is $7.0$.
+
+It appears at indices $1$ and $2$.
+
+Since `select_last_index = 0`, the first occurrence is selected.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
 1
 \end{bmatrix}
-```
+$$
 
-with:
+With the same input and:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 1
-```
+$$
+select_last_index = 1
+$$
 
-```math
+the last occurrence is selected.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
 2
 \end{bmatrix}
-```
+$$
 
 ---
 
@@ -765,7 +1047,7 @@ The operator is undefined if one of the following conditions holds:
 
 * `axis < 0`
 * `axis >= r`, where $r$ is the rank of $X$
-* $dX_{axis} = 0$
+* $dX_{\text{axis}} = 0$
 * `keepdims` is not equal to `0` or `1`
 * `select_last_index` is not equal to `0` or `1`
 
@@ -854,88 +1136,152 @@ See [Restrictions](#real).
 
 The **ArgMax** operator computes the index of the maximum integer value of the input tensor $X$ along a specified axis.
 
-For any fixed indices outside the `axis` dimension, the operator searches the maximum value among:
+For every fixed output position, all indices of $X$ are fixed except the index along the `axis` dimension. This varying index is denoted by $j$, with:
 
-```math
-X[i_0,\dots,i_{axis-1},j,i_{axis+1},\dots,i_{r-1}]
-```
+$$
+0 \leq j < dX_{\text{axis}}
+$$
 
-where:
+For fixed indices outside the reduced dimension, the maximum value is defined as:
 
-```math
-0 \le j < dX_{axis}
-```
+$$
+M =
+\max_{0 \leq j < dX_{\text{axis}}}
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+$$
 
-If the maximum value appears several times, the selected index depends on `select_last_index`.
+If `select_last_index = 0`, the first occurrence of the maximum value is selected:
 
-If `select_last_index = 0`, the first occurrence of the maximum value is selected.
+$$
+Y[k] =
+\min
+\left{
+j
+;\middle|;
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+==================================================================
 
-If `select_last_index = 1`, the last occurrence of the maximum value is selected.
+M
+\right}
+$$
 
-The output tensor contains indices of type `int64`.
+If `select_last_index = 1`, the last occurrence of the maximum value is selected:
+
+$$
+Y[k] =
+\max
+\left{
+j
+;\middle|;
+X[i_0,\ldots,i_{\text{axis}-1},j,i_{\text{axis}+1},\ldots,i_{r-1}]
+==================================================================
+
+M
+\right}
+$$
+
+The output tensor contains integer indices of type `int64`.
+
+The output shape is defined in the same way as in [ArgMax (real)](#real).
 
 ---
 
 ### Example 1: integer tensor
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
-1 & 9 & 3 \\
+1 & 9 & 3 \
 4 & 2 & 6
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 1
+$$
 
-```math
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
+
+The maximum is computed row by row.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
-1 \\
+1 \
 2
 \end{bmatrix}
-```
+$$
 
 ---
 
 ### Example 2: repeated maximum
 
-```math
+Let:
+
+$$
 X =
 \begin{bmatrix}
 2 & 8 & 8 & 1
 \end{bmatrix}
-```
+$$
 
 with:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 0
-```
+$$
+axis = 1
+$$
 
-```math
+$$
+keepdims = 1
+$$
+
+$$
+select_last_index = 0
+$$
+
+The maximum value is $8$.
+
+It appears at indices $1$ and $2$.
+
+Since `select_last_index = 0`, the first occurrence is selected.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
 1
 \end{bmatrix}
-```
+$$
 
-with:
+With the same input and:
 
-```math
-axis = 1,\quad keepdims = 1,\quad select\_last\_index = 1
-```
+$$
+select_last_index = 1
+$$
 
-```math
+the last occurrence is selected.
+
+Therefore:
+
+$$
 Y =
 \begin{bmatrix}
 2
 \end{bmatrix}
-```
+$$
 
 ---
 
@@ -945,7 +1291,7 @@ The operator is undefined if one of the following conditions holds:
 
 * `axis < 0`
 * `axis >= r`, where $r$ is the rank of $X$
-* $dX_{axis} = 0$
+* $dX_{\text{axis}} = 0$
 * `keepdims` is not equal to `0` or `1`
 * `select_last_index` is not equal to `0` or `1`
 
